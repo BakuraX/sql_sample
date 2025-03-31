@@ -1,0 +1,47 @@
+CREATE TABLE devices(device_id INT, 
+device_name VARCHAR(50),
+location VARCHAR(50),
+status ENUM('active', 'inactive'));
+
+CREATE TABLE sensor_readings(reading_id INT, device_id INT,
+sensor_type VARCHAR(20), value FLOAT, unit VARCHAR(10));
+
+CREATE TABLE alerts(alert_id INT, device_id INT, reading_id INT,
+alert_message TEXT);
+
+ALTER TABLE devices ADD PRIMARY KEY(device_id);
+
+INSERT INTO devices(device_id, device_name, location, status)
+VALUES(1,'Temperature Sensor 1', 'Warehouse A', 'active'),
+(2, 'Voltage Sensor 2', 'Factory B', 'active'),
+(3, 'Humidity Sensor 3', 'Data Center C', 'inactive'),
+(4, 'Temperature Sensor 4', 'Factory D', 'active');
+
+
+ALTER TABLE sensor_readings ADD PRIMARY KEY(reading_id);
+ALTER TABLE sensor_readings ADD FOREIGN KEY(device_id) REFERENCES devices(device_id);
+
+INSERT INTO sensor_readings(reading_id, device_id, sensor_type, value, unit)
+VALUES(1,1,'temperature', 25.3, 'C'),
+(2,1,'temperature', 26.1, 'C'),
+(3,2,'voltage', 220.5, 'V'),
+(4,2,'voltage', 221.0, 'V'),
+(5,3,'humdity',55.2,'%'),
+(6,4,'temperature',75.0, 'C');
+
+ALTER TABLE alerts ADD PRIMARY KEY(alert_id);
+ALTER TABLE alerts ADD FOREIGN KEY(device_id) REFERENCES devices(device_id);
+ALTER TABLE alerts ADD FOREIGN KEY(reading_id) REFERENCES sensor_readings(reading_id);
+
+INSERT INTO alerts(alert_id, device_id, reading_id, alert_message)
+VALUES(1,4,6, 'Overheating detected!'),
+(2,3,5,'Humidity too high!');
+
+SELECT devices.location, devices.device_name, sensor_readings.value,
+sensor_readings.unit FROM devices
+INNER JOIN sensor_readings ON devices.device_id = sensor_readings.device_id
+WHERE sensor_readings.reading_id = (
+    SELECT MAX(sensor_readings.reading_id)
+    FROM sensor_readings
+    WHERE sensor_readings.device_id = devices.device_id
+);
